@@ -5,40 +5,96 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Saha Navigasyon – Göldağ</title>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Proj4 (WGS84 <-> UTM) -->
   <script src="https://unpkg.com/proj4@2.9.2/dist/proj4.js"></script>
 
   <style>
-    body{margin:0;font-family:Arial;background:#0b1220;color:#e9eefc}
-    header{padding:16px;background:#0e1730;border-bottom:1px solid #1c2a4a}
-    h1{margin:0;font-size:20px}
-    .wrap{max-width:1200px;margin:auto;padding:16px}
-    .card{background:#111c3a;border:1px solid #1c2a4a;border-radius:14px;padding:16px;margin-bottom:16px}
+    :root{
+      --bg:#0b1220; --panel:#111c3a; --panel2:#0e1730;
+      --line:#1c2a4a; --line2:#2b3c66; --txt:#e9eefc;
+      --accent:#1f3bff;
+    }
+    body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--txt)}
+    header{
+      background:var(--panel2);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+    }
+    .top{
+      max-width:1200px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{
+      width:44px;height:44px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),#3aa7ff);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;letter-spacing:.5px;
+      box-shadow:0 10px 26px rgba(31,59,255,.25);
+      user-select:none;
+    }
+    .titles h1{margin:0;font-size:18px}
+    .titles .org{opacity:.85;font-size:12px;margin-top:2px}
+    .titles .site{opacity:.75;font-size:12px;margin-top:2px}
+    .badge{
+      padding:8px 10px;border:1px solid var(--line2);border-radius:999px;
+      background:rgba(17,28,58,.6);font-size:12px;opacity:.9
+    }
+
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:16px;
+    }
     .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
     input,button{
-      width:100%;padding:10px;border-radius:8px;
-      border:1px solid #2b3c66;background:#0b1220;color:#fff
+      width:100%;padding:11px;border-radius:10px;
+      border:1px solid var(--line2);background:var(--bg);color:#fff;
+      outline:none;
     }
-    button{background:#1f3bff;font-weight:bold;cursor:pointer}
+    input:focus{border-color:#4f67ff}
+    button{background:var(--accent);border:none;font-weight:800;cursor:pointer}
     button.secondary{background:#23304e}
-    #map{height:680px;border-radius:14px;border:1px solid #1c2a4a}
-    .info{font-size:12px;opacity:.8;margin-top:8px;line-height:1.4}
+    #map{height:680px;border-radius:14px;border:1px solid var(--line);overflow:hidden}
+
+    .info{font-size:12px;opacity:.85;margin-top:10px;line-height:1.45}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .pill{
+      display:inline-block;border:1px solid var(--line2);
+      border-radius:999px;padding:6px 10px;margin:6px 6px 0 0;
+      font-size:12px;opacity:.9;background:rgba(11,18,32,.35)
+    }
+    footer{
+      max-width:1200px;margin:0 auto;padding:10px 16px 22px;
+      opacity:.75;font-size:12px
+    }
+    a{color:#9db4ff}
   </style>
 </head>
 
 <body>
 <header>
-  <h1>SAHA NAVİGASYON – Göldağ</h1>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">OGM</div>
+      <div class="titles">
+        <h1>SAHA NAVİGASYON</h1>
+        <div class="org">Orman Genel Müdürlüğü • Sinop OBM • Ayancık OİM</div>
+        <div class="site">Göldağ Orman İşletme Şefliği – YSP Harita</div>
+      </div>
+    </div>
+    <div class="badge">WGS84 / UTM 36N • PDF→PNG</div>
+  </div>
 </header>
 
 <div class="wrap">
 
   <div class="card">
-    <h2>İşaretleme</h2>
+    <h2 style="margin:0 0 10px">İşaretleme</h2>
 
     <div class="row">
       <input id="label" placeholder="Etiket / İstif (örn: GACAK-153)">
@@ -46,34 +102,34 @@
       <input id="northing" placeholder="UTM Northing (N)">
     </div>
 
-    <button onclick="markUTM()">UTM ile İşaretle</button>
-    <button class="secondary" onclick="markGPS()" style="margin-top:8px">
-      GPS ile İşaretle
-    </button>
+    <div class="grid2" style="margin-top:10px">
+      <button onclick="markUTM()">UTM ile İşaretle</button>
+      <button class="secondary" onclick="markGPS()">GPS ile İşaretle</button>
+    </div>
 
     <div class="info">
-      <b>Kalibrasyon sabitlendi.</b><br>
-      Referans nokta: <b>GACAK-153 → E 642595 / N 4634899</b><br>
-      Sabit offset: <b>DX = 202.06 m</b>, <b>DY = -338.16 m</b>
+      <span class="pill"><b>Saha:</b> Göldağ</span>
+      <span class="pill"><b>Referans:</b> GACAK-153 → E 642595 / N 4634899</span>
+      <span class="pill"><b>Offset:</b> DX 202.06 m • DY -338.16 m</span>
+      <div style="margin-top:10px">
+        İpucu: Haritaya tıklayınca tıklanan koordinat E/N kutularına otomatik yazılır.
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <h2>Harita</h2>
+    <h2 style="margin:0 0 10px">Harita</h2>
     <div id="map"></div>
   </div>
 
 </div>
 
-<script>
-/* =============================
-   HARİTA SINIRLARI (UTM 36N)
-   ============================= */
-const WEST  = 638000;
-const EAST  = 657000;
-const SOUTH = 4615000;
-const NORTH = 4639000;
+<footer>
+  Hazırlayan: <b>Mehmet Talha Işık</b> • Orman Mühendisi<br>
+  Not: Bu sayfa saha amaçlıdır. Harita görseli YSP çıktısından üretilmiştir.
+</footer>
 
+<script>
 /* =============================
    PROJEKSİYON TANIMLARI
    ============================= */
@@ -81,10 +137,19 @@ const WGS84 = "EPSG:4326";
 const UTM36 = "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs";
 
 /* =============================
-   SABİT KALİBRASYON OFFSET
+   HARİTA AYARLARI (GÖLDAĞ)
    ============================= */
-const OFFSET_DX = 202.06;   // Easting düzeltmesi (m)
-const OFFSET_DY = -338.16;  // Northing düzeltmesi (m)
+const MAP_IMG = "goldag_map_5000w.jpg";
+const WEST  = 638000;
+const EAST  = 657000;
+const SOUTH = 4615000;
+const NORTH = 4639000;
+
+/* =============================
+   SABİT OFFSET (KALİBRASYON)
+   ============================= */
+const OFFSET_DX = 202.06;
+const OFFSET_DY = -338.16;
 
 function applyOffset(E, N){
   return { E: E + OFFSET_DX, N: N + OFFSET_DY };
@@ -103,7 +168,7 @@ const map = L.map("map", {
 
 const bounds = [[SOUTH, WEST], [NORTH, EAST]];
 
-L.imageOverlay("goldag_map_5000w.jpg", bounds).addTo(map);
+let overlay = L.imageOverlay(MAP_IMG, bounds).addTo(map);
 map.fitBounds(bounds, { padding:[60,60] });
 map.setMaxBounds(bounds);
 map.on("drag", () => map.panInsideBounds(bounds, { animate:false }));
@@ -127,7 +192,11 @@ function markUTM(){
   const p = applyOffset(E0, N0);
 
   L.marker([p.N, p.E]).addTo(layer)
-    .bindPopup(`${t}<br>E:${E0.toFixed(2)}<br>N:${N0.toFixed(2)}<br>DX:${OFFSET_DX} DY:${OFFSET_DY}`)
+    .bindPopup(
+      `<b>${t}</b><br>` +
+      `E: ${E0.toFixed(2)}<br>N: ${N0.toFixed(2)}<br>` +
+      `<span style="opacity:.8">Offset: DX ${OFFSET_DX} • DY ${OFFSET_DY}</span>`
+    )
     .openPopup();
 
   map.setView([p.N, p.E], 1);
@@ -154,19 +223,24 @@ function markGPS(){
 
     layer.clearLayers();
     const t = (document.getElementById("label").value || "GPS").trim();
-    L.marker([p.N, p.E]).addTo(layer).bindPopup(`${t}<br>Lat:${lat.toFixed(6)} Lon:${lon.toFixed(6)}`).openPopup();
+    L.marker([p.N, p.E]).addTo(layer)
+      .bindPopup(
+        `<b>${t}</b><br>` +
+        `Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}`
+      )
+      .openPopup();
+
     map.setView([p.N, p.E], 1);
   }, ()=>{
     alert("GPS konumu alınamadı. (İzin ver / konumu aç)");
   }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
 }
 
-/* Haritaya tıklayınca tıklanan koordinatı inputlara yaz */
+/* Haritaya tıklayınca E/N kutularına yaz */
 map.on("click", (ev)=>{
   document.getElementById("northing").value = ev.latlng.lat.toFixed(2);
   document.getElementById("easting").value  = ev.latlng.lng.toFixed(2);
 });
 </script>
-
 </body>
 </html>
