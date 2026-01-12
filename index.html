@@ -51,9 +51,7 @@
       GPS ile İşaretle
     </button>
 
-    <button class="secondary" onclick="calibrateGACAK153()" style="margin-top:8px">
-      Kalibrasyon: Haritada GACAK-153'e tıkla → Kaydet
-    </button>
+    
 
     <div class="info">
       Referans nokta (sabit): <b>GACAK-153 → E 642595 / N 4634899</b><br>
@@ -86,16 +84,21 @@ const UTM36 = "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs";
 /* =============================
    KALİBRASYON (OFFSET)
    ============================= */
-let offset = JSON.parse(localStorage.getItem("cal_offset") || '{"dx":0,"dy":0}');
+// =============================
+// SABİT KALİBRASYON OFFSET
+// =============================
+
+// ⬇️ BURAYA SENİN KALİBRASYON DEĞERLERİN GELECEK
+const OFFSET_DX = 202.06;   // Easting düzeltmesi (metre)
+const OFFSET_DY = -338.16;   // Northing düzeltmesi (metre)
 
 function applyOffset(E, N){
-  return { E: E + offset.dx, N: N + offset.dy };
+  return {
+    E: E + OFFSET_DX,
+    N: N + OFFSET_DY
+  };
 }
 
-function saveOffset(dx, dy){
-  offset = { dx, dy };
-  localStorage.setItem("cal_offset", JSON.stringify(offset));
-}
 
 /* =============================
    HARİTA OLUŞTUR
@@ -174,7 +177,7 @@ map.on("click", (ev)=>{
 /* =============================
    GACAK-153 KALİBRASYONU
    ============================= */
-function calibrateGACAK153(){
+
   const E_img = parseFloat(easting.value);
   const N_img = parseFloat(northing.value);
 
