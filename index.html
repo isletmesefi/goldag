@@ -26,7 +26,7 @@
     button{background:#1f3bff;font-weight:bold;cursor:pointer}
     button.secondary{background:#23304e}
     #map{height:680px;border-radius:14px;border:1px solid #1c2a4a}
-    .info{font-size:12px;opacity:.8;margin-top:8px}
+    .info{font-size:12px;opacity:.8;margin-top:8px;line-height:1.4}
   </style>
 </head>
 
@@ -51,11 +51,10 @@
       GPS ile İşaretle
     </button>
 
-    
-
     <div class="info">
-      Referans nokta (sabit): <b>GACAK-153 → E 642595 / N 4634899</b><br>
-      Not: Haritada doğru yere tıklayıp kalibrasyon yapman yeterli.
+      <b>Kalibrasyon sabitlendi.</b><br>
+      Referans nokta: <b>GACAK-153 → E 642595 / N 4634899</b><br>
+      Sabit offset: <b>DX = 202.06 m</b>, <b>DY = -338.16 m</b>
     </div>
   </div>
 
@@ -82,23 +81,14 @@ const WGS84 = "EPSG:4326";
 const UTM36 = "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs";
 
 /* =============================
-   KALİBRASYON (OFFSET)
+   SABİT KALİBRASYON OFFSET
    ============================= */
-// =============================
-// SABİT KALİBRASYON OFFSET
-// =============================
-
-// ⬇️ BURAYA SENİN KALİBRASYON DEĞERLERİN GELECEK
-const OFFSET_DX = 202.06;   // Easting düzeltmesi (metre)
-const OFFSET_DY = -338.16;   // Northing düzeltmesi (metre)
+const OFFSET_DX = 202.06;   // Easting düzeltmesi (m)
+const OFFSET_DY = -338.16;  // Northing düzeltmesi (m)
 
 function applyOffset(E, N){
-  return {
-    E: E + OFFSET_DX,
-    N: N + OFFSET_DY
-  };
+  return { E: E + OFFSET_DX, N: N + OFFSET_DY };
 }
-
 
 /* =============================
    HARİTA OLUŞTUR
@@ -126,18 +116,18 @@ const layer = L.layerGroup().addTo(map);
 function markUTM(){
   layer.clearLayers();
 
-  const E0 = parseFloat(easting.value);
-  const N0 = parseFloat(northing.value);
-  if(isNaN(E0) || isNaN(N0)){
-    alert("UTM koordinatları giriniz.");
+  const E0 = parseFloat(document.getElementById("easting").value);
+  const N0 = parseFloat(document.getElementById("northing").value);
+  if(Number.isNaN(E0) || Number.isNaN(N0)){
+    alert("UTM koordinatları giriniz (E ve N).");
     return;
   }
 
-  const t = label.value || "Nokta";
+  const t = (document.getElementById("label").value || "Nokta").trim();
   const p = applyOffset(E0, N0);
 
   L.marker([p.N, p.E]).addTo(layer)
-    .bindPopup(`${t}<br>E:${E0}<br>N:${N0}<br>dx:${offset.dx.toFixed(2)} dy:${offset.dy.toFixed(2)}`)
+    .bindPopup(`${t}<br>E:${E0.toFixed(2)}<br>N:${N0.toFixed(2)}<br>DX:${OFFSET_DX} DY:${OFFSET_DY}`)
     .openPopup();
 
   map.setView([p.N, p.E], 1);
@@ -147,6 +137,11 @@ function markUTM(){
    GPS İLE İŞARETLE
    ============================= */
 function markGPS(){
+  if(!navigator.geolocation){
+    alert("Bu cihazda GPS (geolocation) desteklenmiyor.");
+    return;
+  }
+
   navigator.geolocation.getCurrentPosition(pos=>{
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
@@ -154,54 +149,24 @@ function markGPS(){
     const [E0, N0] = proj4(WGS84, UTM36, [lon, lat]);
     const p = applyOffset(E0, N0);
 
-    easting.value = E0.toFixed(2);
-    northing.value = N0.toFixed(2);
+    document.getElementById("easting").value = E0.toFixed(2);
+    document.getElementById("northing").value = N0.toFixed(2);
 
     layer.clearLayers();
-    const t = label.value || "GPS";
-    L.marker([p.N, p.E]).addTo(layer).bindPopup(t).openPopup();
+    const t = (document.getElementById("label").value || "GPS").trim();
+    L.marker([p.N, p.E]).addTo(layer).bindPopup(`${t}<br>Lat:${lat.toFixed(6)} Lon:${lon.toFixed(6)}`).openPopup();
     map.setView([p.N, p.E], 1);
   }, ()=>{
-    alert("GPS konumu alınamadı.");
-  });
+    alert("GPS konumu alınamadı. (İzin ver / konumu aç)");
+  }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
 }
 
-/* =============================
-   HARİTA TIKLAMA (KALİBRASYON)
-   ============================= */
+/* Haritaya tıklayınca tıklanan koordinatı inputlara yaz */
 map.on("click", (ev)=>{
-  northing.value = ev.latlng.lat.toFixed(2);
-  easting.value  = ev.latlng.lng.toFixed(2);
+  document.getElementById("northing").value = ev.latlng.lat.toFixed(2);
+  document.getElementById("easting").value  = ev.latlng.lng.toFixed(2);
 });
-
-/* =============================
-   GACAK-153 KALİBRASYONU
-   ============================= */
-
-  const E_img = parseFloat(easting.value);
-  const N_img = parseFloat(northing.value);
-
-  if(isNaN(E_img) || isNaN(N_img)){
-    alert("Önce haritada GACAK-153 noktasına tıklayın.");
-    return;
-  }
-
-  // Gerçek referans UTM
-  const E_true = 642595;
-  const N_true = 4634899;
-
-  const dx = E_img - E_true;
-  const dy = N_img - N_true;
-
-  saveOffset(dx, dy);
-
-  alert(
-    "Kalibrasyon kaydedildi!\n" +
-    "DX = " + dx.toFixed(2) + " m\n" +
-    "DY = " + dy.toFixed(2) + " m\n\n" +
-    "Artık tüm işaretler doğru oturmalı."
-  );
-}
 </script>
+
 </body>
 </html>
