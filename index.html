@@ -3,114 +3,85 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Saha Navigasyon - Kömürgölü</title>
+  <title>Saha Navigasyon – Göldağ</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/proj4@2.9.2/dist/proj4.js"></script>
+
   <style>
-    body{font-family:system-ui,Arial;margin:0;background:#0b1220;color:#e9eefc}
-    header{padding:24px 16px;border-bottom:1px solid #1c2a4a;background:#0e1730}
+    body{margin:0;font-family:Arial;background:#0b1220;color:#e9eefc}
+    header{padding:16px;background:#0e1730;border-bottom:1px solid #1c2a4a}
     h1{margin:0;font-size:20px}
-    .sub{opacity:.8;margin-top:6px}
-    .wrap{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#111c3a;border:1px solid #1c2a4a;border-radius:14px;padding:16px;margin-top:16px}
-    label{display:block;margin:10px 0 6px}
-    input,button{width:100%;padding:12px;border-radius:10px;border:1px solid #2b3c66;background:#0b1220;color:#e9eefc}
-    button{cursor:pointer;background:#1f3bff;border:none;font-weight:600;margin-top:10px}
-    button.secondary{background:#23304e}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .small{font-size:12px;opacity:.75;margin-top:10px}
-    .ok{color:#7CFF9B}
-    .warn{color:#FFD37C}
+    .wrap{max-width:1100px;margin:auto;padding:16px}
+    .card{background:#111c3a;border:1px solid #1c2a4a;border-radius:14px;padding:16px;margin-bottom:16px}
+    input,button{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #2b3c66;background:#0b1220;color:#fff}
+    button{background:#1f3bff;font-weight:bold;cursor:pointer}
+    #map{height:650px;border-radius:14px;border:1px solid #1c2a4a}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   </style>
 </head>
+
 <body>
-  <header>
-    <div class="wrap">
-      <h1>SAHA NAVİGASYON – Kömürgölü</h1>
-      <div class="sub">GitHub Pages üzerinde çalışan basit giriş / istif ekranı</div>
-    </div>
-  </header>
+<header>
+  <h1>SAHA NAVİGASYON – Göldağ</h1>
+</header>
 
-  <main class="wrap">
-    <div class="card">
-      <h2 style="margin:0 0 8px">Giriş</h2>
-      <div class="row">
-        <div>
-          <label>İstif No</label>
-          <input id="istif" placeholder="Örn: 124-03" />
-        </div>
-        <div>
-          <label>Kullanıcı</label>
-          <input id="user" placeholder="Örn: Mehmet Talha" />
-        </div>
-      </div>
+<div class="wrap">
 
-      <button onclick="baslat()">İstife Git (Başlat)</button>
-      <button class="secondary" onclick="bitir()">Navigasyonu Bitir</button>
+  <div class="card">
+    <h2>İşaretleme</h2>
 
-      <div id="msg" class="small"></div>
+    <div class="row">
+      <input id="label" placeholder="Etiket / İstif (örn: GACAK-153)">
+      <input id="easting" placeholder="UTM Easting (E)">
+      <input id="northing" placeholder="UTM Northing (N)">
     </div>
 
-    <div class="card">
-      <h2 style="margin:0 0 8px">Kayıtlı Son İstif</h2>
-      <div id="last" class="small">Henüz yok.</div>
-      <button class="secondary" onclick="sil()">Bu İstifi Sil</button>
-    </div>
+    <button onclick="markUTM()">UTM ile İşaretle</button>
+    <button onclick="markGPS()" style="margin-top:8px;background:#23304e">GPS ile İşaretle</button>
 
-    <div class="small">
-      İpucu: Bu sayfa şimdilik sadece “taslak arayüz”. Bir sonraki adımda harita (Google Maps/Leaflet) ekleyebiliriz.
-    </div>
-  </main>
+    <div id="msg"></div>
+  </div>
 
-  <script>
-    const msg = (t, cls="") => {
-      const el = document.getElementById("msg");
-      el.className = "small " + cls;
-      el.textContent = t;
-    };
+  <div class="card">
+    <h2>Harita</h2>
+    <div id="map"></div>
+  </div>
 
-    const refreshLast = () => {
-      const last = localStorage.getItem("last_istif");
-      document.getElementById("last").textContent = last ? last : "Henüz yok.";
-    };
+</div>
 
-    function baslat(){
-      const istif = document.getElementById("istif").value.trim();
-      const user = document.getElementById("user").value.trim();
-      if(!istif){ msg("İstif No boş olamaz.", "warn"); return; }
-      const payload = `İstif: ${istif} | Kullanıcı: ${user || "Misafir"} | ${new Date().toLocaleString("tr-TR")}`;
-      localStorage.setItem("last_istif", payload);
-      msg("Başlatıldı (demo). Son istif kaydedildi.", "ok");
-      refreshLast();
-    }
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const WEST=638000, EAST=657000, SOUTH=4615000, NORTH=4639000;
+  const map = L.map("map",{crs:L.CRS.Simple});
+  const bounds=[[SOUTH,WEST],[NORTH,EAST]];
+  L.imageOverlay("goldag_map_5000w.jpg",bounds).addTo(map);
+  map.fitBounds(bounds);
 
-    function bitir(){
-      msg("Navigasyon bitti (demo).", "ok");
-    }
+  const layer=L.layerGroup().addTo(map);
 
-    function sil(){
-      localStorage.removeItem("last_istif");
-      msg("Kayıt silindi.", "ok");
-      refreshLast();
-    }
+  const WGS84="EPSG:4326";
+  const UTM36="+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs";
 
-    refreshLast();
-  </script>
+  function markUTM(){
+    layer.clearLayers();
+    const E=parseFloat(easting.value);
+    const N=parseFloat(northing.value);
+    const t=label.value||"Nokta";
+    L.marker([N,E]).addTo(layer).bindPopup(t).openPopup();
+    map.setView([N,E],1);
+  }
+
+  function markGPS(){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat=pos.coords.latitude;
+      const lon=pos.coords.longitude;
+      const [E,N]=proj4(WGS84,UTM36,[lon,lat]);
+      easting.value=E.toFixed(2);
+      northing.value=N.toFixed(2);
+      markUTM();
+    });
+  }
+</script>
 </body>
 </html>
-<div class="card">
-  <h2 style="margin:0 0 8px">Göldağ Orman Yolu Ağı Planı (PDF)</h2>
-
-  <iframe
-    src="GOLDAG_YSP.pdf"
-    width="100%"
-    height="650"
-    style="border-radius:14px;border:1px solid #1c2a4a;background:#0b1220"
-    loading="lazy">
-  </iframe>
-
-  <div class="small" style="margin-top:10px">
-    PDF açılmıyorsa:
-    <a href="GOLDAG_YSP.pdf" target="_blank" rel="noopener">
-      Yeni sekmede aç / indir
-    </a>
-  </div>
-</div>
