@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Saha Navigasyon - Kömürgölü</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:0;background:#0b1220;color:#e9eefc}
+    header{padding:24px 16px;border-bottom:1px solid #1c2a4a;background:#0e1730}
+    h1{margin:0;font-size:20px}
+    .sub{opacity:.8;margin-top:6px}
+    .wrap{max-width:900px;margin:0 auto;padding:16px}
+    .card{background:#111c3a;border:1px solid #1c2a4a;border-radius:14px;padding:16px;margin-top:16px}
+    label{display:block;margin:10px 0 6px}
+    input,button{width:100%;padding:12px;border-radius:10px;border:1px solid #2b3c66;background:#0b1220;color:#e9eefc}
+    button{cursor:pointer;background:#1f3bff;border:none;font-weight:600;margin-top:10px}
+    button.secondary{background:#23304e}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .small{font-size:12px;opacity:.75;margin-top:10px}
+    .ok{color:#7CFF9B}
+    .warn{color:#FFD37C}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>SAHA NAVİGASYON – Kömürgölü</h1>
+      <div class="sub">GitHub Pages üzerinde çalışan basit giriş / istif ekranı</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h2 style="margin:0 0 8px">Giriş</h2>
+      <div class="row">
+        <div>
+          <label>İstif No</label>
+          <input id="istif" placeholder="Örn: 124-03" />
+        </div>
+        <div>
+          <label>Kullanıcı</label>
+          <input id="user" placeholder="Örn: Mehmet Talha" />
+        </div>
+      </div>
+
+      <button onclick="baslat()">İstife Git (Başlat)</button>
+      <button class="secondary" onclick="bitir()">Navigasyonu Bitir</button>
+
+      <div id="msg" class="small"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px">Kayıtlı Son İstif</h2>
+      <div id="last" class="small">Henüz yok.</div>
+      <button class="secondary" onclick="sil()">Bu İstifi Sil</button>
+    </div>
+
+    <div class="small">
+      İpucu: Bu sayfa şimdilik sadece “taslak arayüz”. Bir sonraki adımda harita (Google Maps/Leaflet) ekleyebiliriz.
+    </div>
+  </main>
+
+  <script>
+    const msg = (t, cls="") => {
+      const el = document.getElementById("msg");
+      el.className = "small " + cls;
+      el.textContent = t;
+    };
+
+    const refreshLast = () => {
+      const last = localStorage.getItem("last_istif");
+      document.getElementById("last").textContent = last ? last : "Henüz yok.";
+    };
+
+    function baslat(){
+      const istif = document.getElementById("istif").value.trim();
+      const user = document.getElementById("user").value.trim();
+      if(!istif){ msg("İstif No boş olamaz.", "warn"); return; }
+      const payload = `İstif: ${istif} | Kullanıcı: ${user || "Misafir"} | ${new Date().toLocaleString("tr-TR")}`;
+      localStorage.setItem("last_istif", payload);
+      msg("Başlatıldı (demo). Son istif kaydedildi.", "ok");
+      refreshLast();
+    }
+
+    function bitir(){
+      msg("Navigasyon bitti (demo).", "ok");
+    }
+
+    function sil(){
+      localStorage.removeItem("last_istif");
+      msg("Kayıt silindi.", "ok");
+      refreshLast();
+    }
+
+    refreshLast();
+  </script>
+</body>
+</html>
