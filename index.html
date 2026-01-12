@@ -53,10 +53,24 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const WEST=638000, EAST=657000, SOUTH=4615000, NORTH=4639000;
-  const map = L.map("map",{crs:L.CRS.Simple});
-  const bounds=[[SOUTH,WEST],[NORTH,EAST]];
-  L.imageOverlay("goldag_map_5000w.jpg",bounds).addTo(map);
-  map.fitBounds(bounds);
+  const map = L.map("map", {
+  crs: L.CRS.Simple,
+  minZoom: -4,     // daha fazla uzaklaşabilsin
+  maxZoom: 4,
+  zoomSnap: 0.25,  // zoom daha yumuşak
+  zoomDelta: 0.25
+});
+
+const bounds = [[SOUTH, WEST], [NORTH, EAST]];
+L.imageOverlay("goldag_map_5000w.jpg", bounds).addTo(map);
+
+// İlk açılışta biraz “uzaktan” görünsün:
+map.fitBounds(bounds, { padding: [60, 60] });
+
+// Harita dışına kaçmasın (isteğe bağlı ama iyi):
+map.setMaxBounds(bounds);
+map.on("drag", () => map.panInsideBounds(bounds, { animate: false }));
+
 
   const layer=L.layerGroup().addTo(map);
 
