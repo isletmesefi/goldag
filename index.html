@@ -522,7 +522,14 @@
         exportBtn.style.display = "flex";
       }
 
-      setTimeout(() => { map.invalidateSize(); map.fitBounds(bounds); }, 250);
+      setTimeout(() => {
+  map.invalidateSize();
+  map.fitBounds(bounds, {
+    padding: [40, 40],
+    animate: true
+  });
+}, 300);
+
     }
 
     /* =========================
